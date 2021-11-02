@@ -5,14 +5,23 @@
 
 #include "common.h"
 #include "mbox.h"
-
 typedef struct {
     // TODO: Fill this in
+    void* msg; 
+    int nbytes;
 } Message;
 
 typedef struct {
     char name[MBOX_NAME_LENGTH];
     // TODO: Fill this in
+    struct Message messages[MAX_MBOX_LENGTH];
+    int head;
+    int tail;
+    lock_t lock;
+    condition_t full_buffer;
+    condition_t empty_buffer;
+    unsigned int usage_count;
+    int size;
 } MessageBox;
 
 static MessageBox MessageBoxen[MAX_MBOXEN];
@@ -21,6 +30,17 @@ static MessageBox MessageBoxen[MAX_MBOXEN];
 void init_mbox(void) {
     (void) MessageBoxen;
     // TODO: Fill this in
+    for (int i=0; i<MAX_MBOXEN; i++) {
+        MessageBox messageBox = MessageBoxen[i];
+        messageBox.name = NULL;
+        messageBox.head = 0;
+        messageBox.tail = 0;
+        messageBox.usage_count = 0;
+        messageBox.size = 0;
+        lock_init(&messageBox.lock);
+        condition_init(&messageBox.full_buffer);
+        condition_init(&messageBox.empty_buffer);
+    }
 }
 
 // Opens the mailbox named 'name', or creates a new message box if it doesn't
@@ -30,13 +50,50 @@ void init_mbox(void) {
 mbox_t do_mbox_open(const char *name) {
     (void) name;
     // TODO: Fill this in
-    return -1;
+
+    for (int i=0; i<MAX_MBOXEN; i++) {
+        MessageBox mBox = MessageBoxen[i];
+        if (mBox.name == NULL) continue;
+        if (same_string(mBox.name, name) == 1) {
+            mBox.usage_count++;
+            return i;
+        }
+    }
+
+    int index = -1;
+
+    for (int i=0; i<MAX_MBOXEN; i++) {
+        MessageBox mBox = MessageBoxen[i];
+        if (mBox.name == NULL) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1) return -1;
+
+    MessageBoxen[index].name = name;
+    MessageBoxen[index].usage_count = 1;
+
+    return index;
 }
 
 // Closes a message box
 void do_mbox_close(mbox_t mbox) {
     (void) mbox;
-    // TODO: Fill this in
+    MessageBox mBox = MessageBoxen[mbox];
+
+    if (mBox.usage_count == 0) {
+        mBox.name = NULL;
+        mBox.usage_count = 0;
+        mBox.size = 0;
+        mBox.tail =0;
+        mBox.head = 0;
+    }
+    else {
+        mBox.usage_count--;
+    }
+
 }
 
 // Determine if the given message box is full. Equivalently, determine if sending
@@ -44,7 +101,13 @@ void do_mbox_close(mbox_t mbox) {
 int do_mbox_is_full(mbox_t mbox) {
     (void) mbox;
     // TODO: Fill this in
-    return 1;
+    MessageBox mBox = MessageBoxen[mbox];
+    if (mBox.size == MAX_MBOX_LENGTH) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 // Enqueues a message onto a message box. If the message box is full, the process
@@ -56,6 +119,23 @@ void do_mbox_send(mbox_t mbox, void *msg, int nbytes) {
     (void) msg;
     (void) nbytes;
     // TODO: Fill this in
+    struct Message messgage;
+    message.msg = msg;
+    messgage.nbytes = nbytes;
+
+    MessageBox mBox = MessageBoxen[mbox];
+
+    lock_acquire(&mBox.lock);
+    if (do_mbox_is_full(mbox)) {
+        condition_wait(&mBox.lock, &mBox.full_buffer);
+    }
+
+    mBox.messages[mBox.head] = message;
+    mBox.size++;
+    mBox.head = (mBox.head + 1) % MAX_MBOX_LENGTH;
+    
+    lock_release(&mBox.lock);
+
 }
 
 // Receives a message from the specified message box. If empty, the process will
@@ -68,11 +148,32 @@ void do_mbox_recv(mbox_t mbox, void *msg, int nbytes) {
     (void) msg;
     (void) nbytes;
     // TODO: Fill this in
+
+    MessageBox mBox = MessageBoxen[mbox];
+
+    lock_acquire(&mBox.lock);
+    if (mBox.size == 0) {
+        condition_wait(&mBox.lock, &mBox.empty_buffer);
+    }
+
+    Message message = mBox[mBox.tail];
+    int size = 0;
+    if (message.nbytes < nbytes) {
+        size = message.nbytes;
+    }
+    else {
+        size = nbytes;
+    }
+
+    bcopy(message.msg, msg, size);
+
+    lock_release(&mBox.lock);
 }
 
 // Returns the number of processes that have opened but not closed this mailbox
 unsigned int do_mbox_usage_count(mbox_t mbox) {
     (void) mbox;
-    return 0;
     // TODO: Fill this in
+    MessageBox mBox = MessageBoxen[mbox];
+    return mBox.usage_count;
 }

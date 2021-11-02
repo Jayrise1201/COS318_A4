@@ -359,11 +359,28 @@ int get_max_pcbs(void) {
 
 static int do_spawn(const char *filename) {
     (void) filename;
-    // TODO: Fill this in
-
     
+    int index = -2;
 
-    return -1;
+    for (int i =0; i < NUM_PCBS; i++) {
+        if (pcb[i].status == EXITED) {
+            index = i;
+            break;
+        }
+    }
+    if (index == -2) return index;
+
+    Process pid = ramdisk_find(filename);
+    if ((int)pid == 0) return -1;
+
+    // initialize process
+    struct task_info ti = { pid, PROCESS };
+
+    initialize_pcb( &pcb[index], (pid_t) index, &ti);
+
+    total_ready_priority++;
+
+    return index;
 }
 
 static int do_kill(pid_t pid) {
