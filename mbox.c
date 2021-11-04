@@ -5,6 +5,10 @@
 
 #include "common.h"
 #include "mbox.h"
+#include "sync.h"
+#include "util.h"
+
+
 typedef struct {
     // TODO: Fill this in
     void* msg; 
@@ -14,7 +18,7 @@ typedef struct {
 typedef struct {
     char name[MBOX_NAME_LENGTH];
     // TODO: Fill this in
-    struct Message messages[MAX_MBOX_LENGTH];
+    Message messages[MAX_MBOX_LENGTH];
     int head;
     int tail;
     lock_t lock;
@@ -32,7 +36,7 @@ void init_mbox(void) {
     // TODO: Fill this in
     for (int i=0; i<MAX_MBOXEN; i++) {
         MessageBox messageBox = MessageBoxen[i];
-        messageBox.name = NULL;
+        bcopy("", messageBox.name, 1);
         messageBox.head = 0;
         messageBox.tail = 0;
         messageBox.usage_count = 0;
@@ -53,7 +57,7 @@ mbox_t do_mbox_open(const char *name) {
 
     for (int i=0; i<MAX_MBOXEN; i++) {
         MessageBox mBox = MessageBoxen[i];
-        if (mBox.name == NULL) continue;
+        if (same_string(mBox.name, "")) continue;
         if (same_string(mBox.name, name) == 1) {
             mBox.usage_count++;
             return i;
@@ -64,7 +68,7 @@ mbox_t do_mbox_open(const char *name) {
 
     for (int i=0; i<MAX_MBOXEN; i++) {
         MessageBox mBox = MessageBoxen[i];
-        if (mBox.name == NULL) {
+        if (same_string(mBox.name, "")) {
             index = i;
             break;
         }
@@ -72,7 +76,8 @@ mbox_t do_mbox_open(const char *name) {
 
     if (index == -1) return -1;
 
-    MessageBoxen[index].name = name;
+    bcopy((char *)name, MessageBoxen[index].name, strlen( (char *) name));
+   
     MessageBoxen[index].usage_count = 1;
 
     return index;
@@ -84,7 +89,7 @@ void do_mbox_close(mbox_t mbox) {
     MessageBox mBox = MessageBoxen[mbox];
 
     if (mBox.usage_count == 0) {
-        mBox.name = NULL;
+        bcopy("", mBox.name, 1);
         mBox.usage_count = 0;
         mBox.size = 0;
         mBox.tail =0;
@@ -119,9 +124,9 @@ void do_mbox_send(mbox_t mbox, void *msg, int nbytes) {
     (void) msg;
     (void) nbytes;
     // TODO: Fill this in
-    struct Message messgage;
+    Message message;
     message.msg = msg;
-    messgage.nbytes = nbytes;
+    message.nbytes = nbytes;
 
     MessageBox mBox = MessageBoxen[mbox];
 
@@ -156,7 +161,7 @@ void do_mbox_recv(mbox_t mbox, void *msg, int nbytes) {
         condition_wait(&mBox.lock, &mBox.empty_buffer);
     }
 
-    Message message = mBox[mBox.tail];
+    Message message = mBox.messages[mBox.tail];
     int size = 0;
     if (message.nbytes < nbytes) {
         size = message.nbytes;

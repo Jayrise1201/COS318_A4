@@ -386,6 +386,17 @@ static int do_spawn(const char *filename) {
 static int do_kill(pid_t pid) {
     (void) pid;
     // TODO: Fill this in
+
+
+    // check ready queue and remove 
+
+
+    // check sleeping queue and remove 
+    
+    for (iter = q->next; iter && iter != q; iter=iter->next) { 
+
+    }
+
     return -1;
 }
 
