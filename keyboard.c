@@ -254,9 +254,6 @@ static mbox_t keyboard_mbox;
 
 void keyboard_init(void) {
     keyboard_mbox = do_mbox_open( KEYBOARD_MBOX_NAME );
-    // TODO: Fill this in
-    // OH Question
-
 }
 
 // Phony input string

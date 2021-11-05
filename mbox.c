@@ -11,8 +11,7 @@
 
 typedef struct {
     // TODO: Fill this in
-    void* msg; 
-    int nbytes;
+    char msg[MAX_MESSAGE_LENGTH];
 } Message;
 
 typedef struct {
@@ -125,8 +124,8 @@ void do_mbox_send(mbox_t mbox, void *msg, int nbytes) {
     (void) nbytes;
     // TODO: Fill this in
     Message message;
-    message.msg = msg;
-    message.nbytes = nbytes;
+
+    bcopy((char *)msg, message.msg, nbytes);
 
     MessageBox mBox = MessageBoxen[mbox];
 
@@ -162,15 +161,9 @@ void do_mbox_recv(mbox_t mbox, void *msg, int nbytes) {
     }
 
     Message message = mBox.messages[mBox.tail];
-    int size = 0;
-    if (message.nbytes < nbytes) {
-        size = message.nbytes;
-    }
-    else {
-        size = nbytes;
-    }
 
-    bcopy(message.msg, msg, size);
+
+    bcopy(message.msg, msg, nbytes);
 
     lock_release(&mBox.lock);
 }
