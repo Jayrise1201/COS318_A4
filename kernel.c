@@ -13,6 +13,7 @@
 #include "mbox.h"
 #include "ramdisk.h"
 #include "keyboard.h"
+#include "processes.h"
 
 pcb_t pcb[NUM_PCBS];
 
@@ -76,13 +77,12 @@ void _start(void) {
 
     // Start the process named 'init'
     do_spawn("init");
-
     // Enable the timer interrupt.  The interrupt flag will be set once we start
     // the first process, thus starting scheduling
     // Refer to the IF flag in the EFLAGS register
     enter_critical();
     outb(0x21, 0xfc);
-
+    
     // Schedule the first task
     scheduler_entry();
 
@@ -99,7 +99,9 @@ static void initialize_pcb(pcb_t *p, pid_t pid, struct task_info *ti) {
     p->sleep_until = 0;
     p->total_process_time = 0;
     p->waiting_for_lock = NULL;
-
+    // ***** OUR CODE
+    queue_init(p->waiting_on_queue);
+    // ***** OUR CODE
     switch (ti->task_type) {
     case KERNEL_THREAD:
         p->ksp = stack_new();
@@ -362,21 +364,27 @@ static int do_spawn(const char *filename) {
     
     int index = -2;
 
-    for (int i =0; i < NUM_PCBS; i++) {
+    for (int i = 0; i < NUM_PCBS; i++) {
         if (pcb[i].status == EXITED) {
             index = i;
             break;
         }
-    }
-    if (index == -2) return index;
+    }   
 
+    if (index == -2) return index;
+    
     Process pid = ramdisk_find(filename);
-    if ((int)pid == 0) return -1;
+
+    if ((uint32_t)pid == 0) return -1;
 
     // initialize process
-    struct task_info ti = { pid, PROCESS };
+    struct task_info ti; 
+    ti.entry_point = (uint32_t) pid;
+    ti.task_type = PROCESS;
 
     initialize_pcb( &pcb[index], (pid_t) index, &ti);
+
+    print_int(0,5, pcb[index].entry_point);
 
     total_ready_priority++;
 
@@ -387,22 +395,47 @@ static int do_kill(pid_t pid) {
     (void) pid;
     // TODO: Fill this in
     int success;
-    
 
     for(int i=0; i<NUM_PCBS; i++) {
         
         if (pcb[i].pid == pid) {
             node_t* current_queue = pcb[i].current_queue;
             success = queue_remove(current_queue, pid);
+
+            // release all processes that were waiting for it to die
+            node_t* waiting_on_queue = pcb[i].waiting_on_queue;
+            while(!queue_empty(waiting_on_queue)) {
+                pcb_t* temp_pcb = (pcb_t *) queue_get(waiting_on_queue);
+                unblock(temp_pcb);
+            }
+            
+            // close all mailboxes associated with the specified process 
+            for(int j=0; j<MAX_MBOXEN; j++) {
+                if (pcb[i].mbox_map[j] == 1) {
+                    do_mbox_close((mbox_t) j);
+                }
+            }
+
         }
 
     }
-
     return success;
 }
 
 static int do_wait(pid_t pid) {
     (void) pid;
     // TODO: Fill this in
-    return -1;
+    int check = -1;
+    for(int i=0; i<NUM_PCBS; i++) {
+        
+        if (pcb[i].pid == pid) {
+            pcb_t* specified_process = pcb[i];
+            check = 0;
+        }
+
+    }
+
+    block(specified_process->waiting_on_queue);
+    
+    return check;
 }

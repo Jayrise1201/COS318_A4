@@ -55,6 +55,8 @@ typedef struct pcb {
     // For deadlock detection
     struct lock *waiting_for_lock;
     node_t* current_queue;
+    node_t* waiting_on_queue;
+    int mbox_map[MAX_MBOXEN];
 } pcb_t;
 
 extern priority_t total_ready_priority;

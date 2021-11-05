@@ -275,9 +275,11 @@ int do_getchar() {
 static void putchar(struct character *c) {
     (void) c;
     // TODO: Fill this in
+    /*
     if (do_mbox_is_full(keyboard_mbox)) {
         return;
     }
 
     do_mbox_send(keyboard_mbox, &c->character, 1);
+    */
 }

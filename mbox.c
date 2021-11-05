@@ -59,6 +59,9 @@ mbox_t do_mbox_open(const char *name) {
         if (same_string(mBox.name, "")) continue;
         if (same_string(mBox.name, name) == 1) {
             mBox.usage_count++;
+
+            // update map of current process to record that this message box is in use
+            current_running->mbox_map[i] = 1;
             return i;
         }
     }
@@ -78,6 +81,9 @@ mbox_t do_mbox_open(const char *name) {
     bcopy((char *)name, MessageBoxen[index].name, strlen( (char *) name));
    
     MessageBoxen[index].usage_count = 1;
+    
+    // update map of current process to record that this message box is in use
+    current_running->mbox_map[index] = 1;
 
     return index;
 }
@@ -86,6 +92,9 @@ mbox_t do_mbox_open(const char *name) {
 void do_mbox_close(mbox_t mbox) {
     (void) mbox;
     MessageBox mBox = MessageBoxen[mbox];
+
+    // update map of current process to record that this message box is closed
+    current_running->mbox_map[(int) mbox] = 0;
 
     if (mBox.usage_count == 0) {
         bcopy("", mBox.name, 1);

@@ -11,6 +11,7 @@
 // The 'init' process is a shell that lets you spawn other programs
 static void get_line(char *buffer, int maxlen);
 void init_process(void) {
+    print_str(0,0,"TEST");
     for (;;) {
         printf(20, 1, "Type help for help...");
         printf(21, 1, "$                           ");
