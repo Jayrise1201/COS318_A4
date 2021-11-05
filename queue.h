@@ -20,8 +20,10 @@ node_t *queue_get(node_t * queue);
 // Add item to the back of the queue
 void queue_put(node_t * queue, node_t * item);
 
-// remove item from queue with pid if it exists
-void queue_remove(node_t * queue, pid_t pid);
+// for killing, remove item from queue with pid if it exists
+// also reclaim memory and update total_ready_priority
+// return 1 for successfully removed, 0 otherwise
+int queue_remove(node_t * queue, pid_t pid);
 
 // Determine if the queue is empty
 // Returns 1 if the queue is empty and 0 otherwise
