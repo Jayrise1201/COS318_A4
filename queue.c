@@ -60,10 +60,12 @@ void queue_remove(node_t * q, pid_t pid) {
             if (q->next == q) {
                 q = NULL;
             }
-            else {
-                
+            else { 
+                q->prev->next = q->next;
+                q->next->prev = q->prev;
             }
         }
+        
 
 
     if ( (pcb_t*) sleep_queue->pid == pid) {
@@ -78,14 +80,6 @@ void queue_remove(node_t * q, pid_t pid) {
         sleep_queue = NULL;
     }
 
-    for (iter = q->next; iter && iter != q; iter=iter->next) {
-        pcb_t* temp_pcb = (pcb_t*) iter;
-        if (pid == temp_pcb->pid) {
-            // remove item  
-            iter->prev->next = iter->next;
-            iter->next->prev = iter->prev;
-        }
-    }
 
 }
 
