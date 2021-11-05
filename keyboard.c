@@ -282,5 +282,5 @@ static void putchar(struct character *c) {
         return;
     }
 
-    do_mbox_send(keyboard_mbox, c->character, 1);
+    do_mbox_send(keyboard_mbox, &c->character, 1);
 }

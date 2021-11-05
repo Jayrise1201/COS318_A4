@@ -386,13 +386,19 @@ static int do_spawn(const char *filename) {
 static int do_kill(pid_t pid) {
     (void) pid;
     // TODO: Fill this in
-
+    int success;
 
     // check ready queue and remove 
-
-
+    success = queue_remove(&ready_queue, pid);
+    if(success){
+        return 0;
+    }
     // check sleeping queue and remove 
-    node_t *q = &sleep_queue;
+    success = queue_remove(&ready_queue, pid);
+    if(success){
+        return 0;
+    }
+    // check all other blocking queues
 
 
 

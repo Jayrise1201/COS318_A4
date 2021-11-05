@@ -6,7 +6,7 @@ kernel.o: kernel.c common.h interrupt.h kernel.h scheduler.h queue.h \
  util.h printf.h mbox.h ramdisk.h keyboard.h
 keyboard.o: keyboard.c kernel.h common.h scheduler.h queue.h util.h \
  mbox.h keyboard.h interrupt.h
-mbox.o: mbox.c common.h mbox.h
+mbox.o: mbox.c common.h mbox.h sync.h queue.h util.h
 printf.o: printf.c printf.h
 processes.o: processes.c common.h syslib.h util.h printf.h
 queue.o: queue.c common.h queue.h
