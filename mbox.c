@@ -7,6 +7,7 @@
 #include "mbox.h"
 #include "sync.h"
 #include "util.h"
+#include "scheduler.h"
 
 
 typedef struct {

@@ -426,10 +426,12 @@ static int do_wait(pid_t pid) {
     (void) pid;
     // TODO: Fill this in
     int check = -1;
+    pcb_t* specified_process; 
+
     for(int i=0; i<NUM_PCBS; i++) {
         
         if (pcb[i].pid == pid) {
-            pcb_t* specified_process = pcb[i];
+            specified_process = &pcb[i];
             check = 0;
         }
 
