@@ -387,22 +387,18 @@ static int do_kill(pid_t pid) {
     (void) pid;
     // TODO: Fill this in
     int success;
+    
 
-    // check ready queue and remove 
-    success = queue_remove(&ready_queue, pid);
-    if(success){
-        return 0;
+    for(int i=0; i<NUM_PCBS; i++) {
+        
+        if (pcb[i].pid == pid) {
+            node_t* current_queue = pcb[i].current_queue;
+            success = queue_remove(current_queue, pid);
+        }
+
     }
-    // check sleeping queue and remove 
-    success = queue_remove(&ready_queue, pid);
-    if(success){
-        return 0;
-    }
-    // check all other blocking queues
 
-
-
-    return -1;
+    return success;
 }
 
 static int do_wait(pid_t pid) {

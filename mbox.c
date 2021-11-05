@@ -139,7 +139,6 @@ void do_mbox_send(mbox_t mbox, void *msg, int nbytes) {
     mBox.head = (mBox.head + 1) % MAX_MBOX_LENGTH;
     
     lock_release(&mBox.lock);
-
 }
 
 // Receives a message from the specified message box. If empty, the process will

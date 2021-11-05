@@ -31,6 +31,10 @@ void queue_put(node_t * queue, node_t * item) {
     item->next = queue;
     item->prev->next = item;
     item->next->prev = item;
+
+    // keep a record of which queue the pcb is on
+    pcb_t* temp_pcb = (pcb_t*) item;
+    temp_pcb->current_queue = queue;
 }
 
 int queue_empty(node_t *queue) {
@@ -51,33 +55,31 @@ node_t *queue_first(node_t *queue) {
 int queue_remove(node_t * q, pid_t pid) {
     // check if queue is empty
     node_t * iter;
+
     if (!queue_empty(q)) {
+
         for (iter = q->next; iter && iter != q; iter=iter->next) {
+
             pcb_t* temp_pcb = (pcb_t*) iter;
+
             if (pid == temp_pcb->pid) {
+
                 // remove item  
                 iter->prev->next = iter->next;
                 iter->next->prev = iter->prev;
 
-                // reclaim memory
-
                 // update total_ready_priority
                 total_ready_priority -= temp_pcb->priority;
+                return 0;
             }
+        
         }
     
-        // // check first item 
-        // if ( (pcb_t*) q->pid == pid) {
-        //     // only 1 item in queue
-        //     if (q->next == q) {
-        //         q = NULL;
-        //     }
-        //     else {
-                
-        //     }
-        // }
     }
+
+    return -1;
 }
+
 
 
 

@@ -54,6 +54,7 @@ typedef struct pcb {
     uint64_t total_process_time;
     // For deadlock detection
     struct lock *waiting_for_lock;
+    node_t* current_queue;
 } pcb_t;
 
 extern priority_t total_ready_priority;
