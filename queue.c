@@ -46,6 +46,51 @@ node_t *queue_first(node_t *queue) {
         return queue->next;
 }
 
+
+void queue_remove(node_t * q, pid_t pid) {
+        // check if queue is empty
+    
+
+    if (!queue_empty(&sleep_queue)) {
+        // only 1 item in queue
+
+        // check first item 
+        if ( (pcb_t*) q->pid == pid) {
+            // only 1 item in queue
+            if (q->next == q) {
+                q = NULL;
+            }
+            else {
+                
+            }
+        }
+
+
+    if ( (pcb_t*) sleep_queue->pid == pid) {
+        sleep_queue = NUL
+    }
+        
+
+    }
+
+    // only 1 item in queue
+    if ( (pcb_t*) sleep_queue->pid == pid) {
+        sleep_queue = NULL;
+    }
+
+    for (iter = q->next; iter && iter != q; iter=iter->next) {
+        pcb_t* temp_pcb = (pcb_t*) iter;
+        if (pid == temp_pcb->pid) {
+            // remove item  
+            iter->prev->next = iter->next;
+            iter->next->prev = iter->prev;
+        }
+    }
+
+}
+
+
+
 void queue_put_sort(node_t *q, node_t *elt, node_lte lte) {
     node_t *iter;
 

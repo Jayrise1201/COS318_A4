@@ -392,10 +392,9 @@ static int do_kill(pid_t pid) {
 
 
     // check sleeping queue and remove 
-    
-    for (iter = q->next; iter && iter != q; iter=iter->next) { 
+    node_t *q = &sleep_queue;
 
-    }
+
 
     return -1;
 }
