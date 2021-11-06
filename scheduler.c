@@ -94,8 +94,6 @@ void put_current_running() {
         total_ready_priority += current_running->priority;
     
     queue_put(&ready_queue, (node_t*) current_running);
-
-    print_int(0,0, queue_empty(&ready_queue));
 }
 
 // State for a random number generator used by lottery scheduling

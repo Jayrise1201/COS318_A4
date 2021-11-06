@@ -135,20 +135,32 @@ void do_mbox_send(mbox_t mbox, void *msg, int nbytes) {
     // TODO: Fill this in
     Message message;
 
+    // copy given message into message struct
     bcopy((char *)msg, message.msg, nbytes);
 
+    // get respective message box
     MessageBox mBox = MessageBoxen[mbox];
 
+    // acquire lock 
     lock_acquire(&mBox.lock);
+
+    // wait if mbox is full
     if (do_mbox_is_full(mbox)) {
         condition_wait(&mBox.lock, &mBox.full_buffer);
     }
 
+    // add message at head location
     mBox.messages[mBox.head] = message;
-    mBox.size++;
+
+    // increment size
+    mBox.size++; 
+
+    // update head
     mBox.head = (mBox.head + 1) % MAX_MBOX_LENGTH;
+    print_int(0,0, mBox.head);
     
     lock_release(&mBox.lock);
+
 }
 
 // Receives a message from the specified message box. If empty, the process will
@@ -171,6 +183,9 @@ void do_mbox_recv(mbox_t mbox, void *msg, int nbytes) {
 
     Message message = mBox.messages[mBox.tail];
 
+    mBox.tail = (mBox.tail + 1) % MAX_MBOX_LENGTH;
+
+    mBox.size--;
 
     bcopy(message.msg, msg, nbytes);
 

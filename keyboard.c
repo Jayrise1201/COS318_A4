@@ -258,16 +258,18 @@ void keyboard_init(void) {
 
 // Phony input string
 static const char message[] = "help\nplane\ncount\n";
-static int moff = 0;
+//static int moff = 0;
 
 // Function to read a character from the keyboard queue
 int do_getchar() {
-    do_sleep(1000);
-    char c = message[moff];
-    moff++;
-    if( message[moff] == '\0' )
-        moff = 0;
-    return (int)c;
+
+//    do_sleep(1000);
+    char c;
+
+    do_mbox_recv(keyboard_mbox, &c , 1);
+    print_char(1,0,c);
+
+    return (int) c;
 }
 
 // Called by the keyboard interrupt (irq1) handler (through normal_handler) to
@@ -275,11 +277,13 @@ int do_getchar() {
 static void putchar(struct character *c) {
     (void) c;
     // TODO: Fill this in
-    /*
+    
     if (do_mbox_is_full(keyboard_mbox)) {
         return;
     }
 
+    leave_critical();
+
     do_mbox_send(keyboard_mbox, &c->character, 1);
-    */
+    enter_critical();
 }

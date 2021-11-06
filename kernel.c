@@ -384,10 +384,9 @@ static int do_spawn(const char *filename) {
 
     initialize_pcb( &pcb[index], (pid_t) index, &ti);
 
-    print_int(0,5, pcb[index].entry_point);
-
     total_ready_priority++;
 
+    queue_put(&ready_queue, (node_t*) &pcb[index]);
     return index;
 }
 
