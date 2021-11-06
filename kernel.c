@@ -394,7 +394,7 @@ static int do_spawn(const char *filename) {
 static int do_kill(pid_t pid) {
     (void) pid;
     // TODO: Fill this in
-    int success;
+    int success = -1;
 
     for(int i=0; i<NUM_PCBS; i++) {
         
@@ -437,7 +437,8 @@ static int do_wait(pid_t pid) {
 
     }
 
-    block(specified_process->waiting_on_queue);
+    if (check == 0)
+        block(specified_process->waiting_on_queue);
     
     return check;
 }
