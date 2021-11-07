@@ -431,7 +431,6 @@ static int do_wait(pid_t pid) {
     enter_critical();
     int check = -1;
     pcb_t* specified_process; 
-asdfa;
     for(int i=0; i<NUM_PCBS; i++) {
         
         if (pcb[i].pid == pid) {
