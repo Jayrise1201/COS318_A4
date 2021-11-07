@@ -402,6 +402,7 @@ static int do_kill(pid_t pid) {
         
         if (pcb[i].pid == pid) {
             node_t* current_queue = pcb[i].current_queue;
+            pcb[i].status = EXITED;
             success = queue_remove(current_queue, pid);
 
             // release all processes that were waiting for it to die
@@ -417,7 +418,6 @@ static int do_kill(pid_t pid) {
                     do_mbox_close((mbox_t) j);
                 }
             }
-
         }
 
     }
