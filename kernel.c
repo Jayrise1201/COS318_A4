@@ -38,7 +38,7 @@ static void (*exception_handler[NUM_EXCEPTIONS]) (void) = {
     &exception_9, &exception_10, &exception_11, &exception_12,
     &exception_13, &exception_14};
 
-static uint32_t *stack_new(void);
+static uint32_t *stack_new(int* key);
 static void first_entry(void);
 static int invalid_syscall(void);
 static void init_syscalls(void);
@@ -105,12 +105,13 @@ static void initialize_pcb(pcb_t *p, pid_t pid, struct task_info *ti) {
     // ***** OUR CODE
     switch (ti->task_type) {
     case KERNEL_THREAD:
-        p->ksp = stack_new();
+        p->ksp = stack_new(&p->ksp_key);
+        p->usp_key = -1;
         p->nested_count = 1;
         break;
     case PROCESS:
-        p->ksp = stack_new();
-        p->usp = stack_new();
+        p->ksp = stack_new(&p->ksp_key);
+        p->usp = stack_new(&p->usp_key);
         p->nested_count = 0;
         break;
     default:
@@ -119,10 +120,10 @@ static void initialize_pcb(pcb_t *p, pid_t pid, struct task_info *ti) {
     *--p->ksp = (uint32_t) & first_entry;
 }
 
+// 0 for available, 1 for not
 int avail_stack[NUM_PCBS];
 
-
-static uint32_t *stack_new() {
+static uint32_t *stack_new(int* key) {
 
     int addr_key = -1;
     for(int i=0; i<NUM_PCBS; i++) {
@@ -132,6 +133,8 @@ static uint32_t *stack_new() {
             break;
         }
     }
+
+    *key = addr_key;
 
     uint32_t address = 0x100000;
     address += ((addr_key + 1) * 0x1000);
@@ -439,6 +442,14 @@ static int do_kill(pid_t pid) {
                 if (pcb[i].mbox_map[j] == 1) {
                     do_mbox_close((mbox_t) j);
                 }
+            }
+
+            // reclaim stack
+            if(pcb[i].ksp_key >= 0){
+                avail_stack[pcb[i].ksp_key] = 0;
+            }
+            if(pcb[i].usp_key >= 0){
+                avail_stack[pcb[i].usp_key] = 0;
             }
         }
 
