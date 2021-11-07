@@ -3,6 +3,7 @@
  * Authors: Jayson Badal and Austin Li
  */ 
 
+We did not attempt extra credit. Everything works as expected. 
 
 In this project we did the following: implemented a system call, inter-process communication 
 using message boxes, a handler for the keyboard interrupt, a kill system call, and a wait 
