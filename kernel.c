@@ -362,6 +362,7 @@ int get_max_pcbs(void) {
 static int do_spawn(const char *filename) {
     (void) filename;
     
+    enter_critical();
     int index = -2;
 
     for (int i = 0; i < NUM_PCBS; i++) {
@@ -387,12 +388,14 @@ static int do_spawn(const char *filename) {
     total_ready_priority++;
 
     queue_put(&ready_queue, (node_t*) &pcb[index]);
+    leave_critical();
     return index;
 }
 
 static int do_kill(pid_t pid) {
     (void) pid;
     // TODO: Fill this in
+    enter_critical();
     int success = -1;
 
     for(int i=0; i<NUM_PCBS; i++) {
@@ -418,15 +421,17 @@ static int do_kill(pid_t pid) {
         }
 
     }
+    leave_critical();
     return success;
 }
 
 static int do_wait(pid_t pid) {
     (void) pid;
     // TODO: Fill this in
+    enter_critical();
     int check = -1;
     pcb_t* specified_process; 
-
+asdfa;
     for(int i=0; i<NUM_PCBS; i++) {
         
         if (pcb[i].pid == pid) {
@@ -435,9 +440,10 @@ static int do_wait(pid_t pid) {
         }
 
     }
-
-    if (check == 0)
+    if (check == 0) {
         block(specified_process->waiting_on_queue);
-    
+    }
+
+    leave_critical();
     return check;
 }

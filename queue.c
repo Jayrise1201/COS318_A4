@@ -33,8 +33,8 @@ void queue_put(node_t * queue, node_t * item) {
     item->next->prev = item;
 
     // keep a record of which queue the pcb is on
-    pcb_t* temp_pcb = (pcb_t*) item;
-    temp_pcb->current_queue = queue;
+    // pcb_t* temp_pcb = (pcb_t*) item;
+    // temp_pcb->current_queue = queue;
 }
 
 int queue_empty(node_t *queue) {
@@ -69,7 +69,7 @@ int queue_remove(node_t * q, pid_t pid) {
                 iter->next->prev = iter->prev;
 
                 // update total_ready_priority
-                total_ready_priority -= temp_pcb->priority;
+                //total_ready_priority -= temp_pcb->priority;
                 return 0;
             }
         

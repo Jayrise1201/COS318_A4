@@ -35,15 +35,15 @@ void init_mbox(void) {
     (void) MessageBoxen;
     // TODO: Fill this in
     for (int i=0; i<MAX_MBOXEN; i++) {
-        MessageBox messageBox = MessageBoxen[i];
-        bcopy("", messageBox.name, 1);
-        messageBox.head = 0;
-        messageBox.tail = 0;
-        messageBox.usage_count = 0;
-        messageBox.size = 0;
-        lock_init(&messageBox.lock);
-        condition_init(&messageBox.full_buffer);
-        condition_init(&messageBox.empty_buffer);
+        MessageBox* messageBox = &MessageBoxen[i];
+        //bcopy("null", messageBox->name, 1);
+        messageBox->head = 0;
+        messageBox->tail = 0;
+        messageBox->usage_count = 0;
+        messageBox->size = 0;
+        lock_init(&messageBox->lock);
+        condition_init(&messageBox->full_buffer);
+        condition_init(&messageBox->empty_buffer);
     }
 }
 
@@ -56,10 +56,10 @@ mbox_t do_mbox_open(const char *name) {
     // TODO: Fill this in
 
     for (int i=0; i<MAX_MBOXEN; i++) {
-        MessageBox mBox = MessageBoxen[i];
-        if (same_string(mBox.name, "")) continue;
-        if (same_string(mBox.name, name) == 1) {
-            mBox.usage_count++;
+        MessageBox* mBox = &MessageBoxen[i];
+        if (mBox->usage_count == 0) continue;
+        if (same_string(mBox->name, name) == 1) {
+            mBox->usage_count++;
 
             // update map of current process to record that this message box is in use
             current_running->mbox_map[i] = 1;
@@ -70,8 +70,8 @@ mbox_t do_mbox_open(const char *name) {
     int index = -1;
 
     for (int i=0; i<MAX_MBOXEN; i++) {
-        MessageBox mBox = MessageBoxen[i];
-        if (same_string(mBox.name, "")) {
+        MessageBox* mBox = &MessageBoxen[i];
+        if (mBox->usage_count == 0) {
             index = i;
             break;
         }
@@ -92,20 +92,20 @@ mbox_t do_mbox_open(const char *name) {
 // Closes a message box
 void do_mbox_close(mbox_t mbox) {
     (void) mbox;
-    MessageBox mBox = MessageBoxen[mbox];
+    MessageBox* mBox = &MessageBoxen[mbox];
 
     // update map of current process to record that this message box is closed
     current_running->mbox_map[(int) mbox] = 0;
 
-    if (mBox.usage_count == 0) {
-        bcopy("", mBox.name, 1);
-        mBox.usage_count = 0;
-        mBox.size = 0;
-        mBox.tail =0;
-        mBox.head = 0;
+    if (mBox->usage_count == 0) {
+        //bcopy("null", mBox->name, 1);
+        mBox->usage_count = 0;
+        mBox->size = 0;
+        mBox->tail = 0;
+        mBox->head = 0;
     }
     else {
-        mBox.usage_count--;
+        mBox->usage_count--;
     }
 
 }
@@ -115,8 +115,8 @@ void do_mbox_close(mbox_t mbox) {
 int do_mbox_is_full(mbox_t mbox) {
     (void) mbox;
     // TODO: Fill this in
-    MessageBox mBox = MessageBoxen[mbox];
-    if (mBox.size == MAX_MBOX_LENGTH) {
+    MessageBox* mBox = &MessageBoxen[mbox];
+    if (mBox->size == MAX_MBOX_LENGTH) {
         return 1;
     }
     else {
@@ -133,33 +133,44 @@ void do_mbox_send(mbox_t mbox, void *msg, int nbytes) {
     (void) msg;
     (void) nbytes;
     // TODO: Fill this in
+
     Message message;
 
     // copy given message into message struct
     bcopy((char *)msg, message.msg, nbytes);
 
     // get respective message box
-    MessageBox mBox = MessageBoxen[mbox];
+    MessageBox* mBox = &MessageBoxen[mbox];
 
     // acquire lock 
-    lock_acquire(&mBox.lock);
+    lock_acquire(&mBox->lock);
 
     // wait if mbox is full
     if (do_mbox_is_full(mbox)) {
-        condition_wait(&mBox.lock, &mBox.full_buffer);
+        condition_wait(&mBox->lock, &mBox->full_buffer);
     }
 
     // add message at head location
-    mBox.messages[mBox.head] = message;
+    mBox->messages[mBox->head] = message;
 
+
+    // release wait if mBox was empty
+    
+    condition_signal(&mBox->empty_buffer);
+    
+    
     // increment size
-    mBox.size++; 
+    mBox->size++; 
 
     // update head
-    mBox.head = (mBox.head + 1) % MAX_MBOX_LENGTH;
-    print_int(0,0, mBox.head);
-    
-    lock_release(&mBox.lock);
+    if (mBox->head == MAX_MBOX_LENGTH-1) {
+        mBox->head = 0;
+    }
+    else {
+        mBox->head++;
+    }
+
+    lock_release(&mBox->lock);
 
 }
 
@@ -174,22 +185,34 @@ void do_mbox_recv(mbox_t mbox, void *msg, int nbytes) {
     (void) nbytes;
     // TODO: Fill this in
 
-    MessageBox mBox = MessageBoxen[mbox];
+    // get respective mBox
+    MessageBox* mBox = &MessageBoxen[mbox];
 
-    lock_acquire(&mBox.lock);
-    if (mBox.size == 0) {
-        condition_wait(&mBox.lock, &mBox.empty_buffer);
+    lock_acquire(&mBox->lock);
+    // if mBox is empty
+
+    if (mBox->size == 0) {
+        condition_wait(&mBox->lock, &mBox->empty_buffer);
+    }
+    // get char at tail of message box
+    Message message = mBox->messages[mBox->tail];
+
+    if (mBox->tail == MAX_MBOX_LENGTH-1) {
+        mBox->tail = 0;
+    }
+    else {
+        mBox->tail++;
     }
 
-    Message message = mBox.messages[mBox.tail];
+    condition_signal(&mBox->full_buffer);
 
-    mBox.tail = (mBox.tail + 1) % MAX_MBOX_LENGTH;
+    // decrement size
+    mBox->size--;
 
-    mBox.size--;
-
+    // put char into the respective message struct 
     bcopy(message.msg, msg, nbytes);
 
-    lock_release(&mBox.lock);
+    lock_release(&mBox->lock);
 }
 
 // Returns the number of processes that have opened but not closed this mailbox
