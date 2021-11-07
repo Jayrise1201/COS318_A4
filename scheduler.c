@@ -10,6 +10,7 @@
 #include "util.h"
 #include "printf.h"
 #include "kernel.h"
+#include "mbox.h"
 
 volatile uint64_t num_ticks;
 pcb_t *current_running;
@@ -166,9 +167,23 @@ void do_yield() {
 
 void do_exit() {
     enter_critical();
+
+    // release all processes waiting
+    node_t* waiting_on_queue = current_running->waiting_on_queue;
+    while(!queue_empty(waiting_on_queue)) {
+        pcb_t* temp_pcb = (pcb_t *) queue_get(waiting_on_queue);
+        unblock(temp_pcb);
+    }
+
+    // close all mailboxes associated with this process
+    for(int i=0; i<MAX_MBOXEN; i++) {
+        if (current_running->mbox_map[i] == 1) {
+            do_mbox_close((mbox_t) i);
+        }
+    }
+
     current_running->status = EXITED;
     scheduler_entry();
-    // No need for leave_critical() since scheduler_entry() never returns
 }
 
 pid_t do_getpid() {
