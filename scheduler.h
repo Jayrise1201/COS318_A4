@@ -57,6 +57,10 @@ typedef struct pcb {
     node_t* current_queue;
     node_t* waiting_on_queue;
     int mbox_map[MAX_MBOXEN];
+    uint32_t *ksp_reset;
+    uint32_t *usp_reset;
+    int ksp_key;
+    int usp_key;
 } pcb_t;
 
 extern priority_t total_ready_priority;

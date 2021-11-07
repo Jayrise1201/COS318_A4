@@ -91,6 +91,7 @@ void _start(void) {
 }
 
 static void initialize_pcb(pcb_t *p, pid_t pid, struct task_info *ti) {
+
     p->entry_point = ti->entry_point;
     p->pid = pid;
     p->task_type = ti->task_type;
@@ -118,12 +119,33 @@ static void initialize_pcb(pcb_t *p, pid_t pid, struct task_info *ti) {
     *--p->ksp = (uint32_t) & first_entry;
 }
 
+int avail_stack[NUM_PCBS];
+
+
 static uint32_t *stack_new() {
+
+    int addr_key = -1;
+    for(int i=0; i<NUM_PCBS; i++) {
+        if (avail_stack[i] == 0) {
+            addr_key = i;
+            avail_stack[i] = 1;
+            break;
+        }
+    }
+
+    uint32_t address = 0x100000;
+    address += ((addr_key + 1) * 0x1000);
+
+    return (uint32_t *) address;
+    /*
+
     static volatile uint32_t next_stack = 0x100000;
 
     next_stack += 0x1000;
     ASSERT(next_stack <= 0x200000);
     return (uint32_t *) next_stack;
+    */
+
 }
 
 static void first_entry() {
